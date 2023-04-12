@@ -1,0 +1,25 @@
+
+:orphan:
+
+.. _sphx_glr_examples_gallery_sg_execution_times:
+
+
+Computation times
+=================
+**00:22.530** total execution time for **examples_gallery** files:
+
++--------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_gallery_plot_results_tracker.py` (``plot_results_tracker.py``)                 | 00:08.583 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_gallery_plot_speed_on_track.py` (``plot_speed_on_track.py``)                   | 00:04.745 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_gallery_plot_speed_traces.py` (``plot_speed_traces.py``)                       | 00:03.108 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_gallery_plot_gear_shifts_on_track.py` (``plot_gear_shifts_on_track.py``)       | 00:02.776 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_gallery_plot_qualifying_results.py` (``plot_qualifying_results.py``)           | 00:02.523 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_gallery_plot_who_can_still_win_wdc.py` (``plot_who_can_still_win_wdc.py``)     | 00:00.794 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_examples_gallery_example_fastf1_signalrclient.py` (``example_fastf1_signalrclient.py``) | 00:00.000 | 0.0 MB |
++--------------------------------------------------------------------------------------------------------+-----------+--------+
