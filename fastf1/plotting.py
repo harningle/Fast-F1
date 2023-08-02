@@ -99,8 +99,9 @@ DRIVER_COLORS: Dict[str, str] = {
     "valtteri bottas": "#900000",
     "zhou guanyu": "#500000",
 
-    "nyck de vries": "#2b4562",
+    "nyck de vries": "#1e3d61",
     "yuki tsunoda": "#356cac",
+    "daniel ricciardo": "#2b4562",
 
     "pierre gasly": "#0090ff",
     "esteban ocon": "#70c2ff",
@@ -136,7 +137,7 @@ DRIVER_TRANSLATE: Dict[str, str] = {
     'PIA': 'oscar piastri', 'NOR': 'lando norris',
     'GAS': 'pierre gasly', 'OCO': 'esteban ocon',
     'BOT': 'valtteri bottas', 'ZHO': 'zhou guanyu',
-    'DEV': 'nyck de vries', 'TSU': 'yuki tsunoda',
+    'DEV': 'nyck de vries', 'TSU': 'yuki tsunoda', 'RIC': 'daniel ricciardo',
     'MAG': 'kevin magnussen', 'HUL': 'nico hulkenberg',
     'ALO': 'fernando alonso', 'STR': 'lance stroll', 'DRU': 'felipe drugovich',
     'HAM': 'lewis hamilton', 'RUS': 'george russell',
@@ -150,6 +151,7 @@ COMPOUND_COLORS: Dict[str, str] = {
     "INTERMEDIATE": "#43b02a",
     "WET": "#0067ad",
     "UNKNOWN": "#00ffff",
+    "TEST-UNKNOWN": "#434649"
 }
 """Mapping of tyre compound names to compound colors (hex color codes).
 (current season only)"""
@@ -346,7 +348,7 @@ def lapnumber_axis(ax, axis='xaxis'):
 
     Args:
         ax: matplotlib axis
-        axis (='xaxis', optional): can be 'xaxis' or 'yaxis'
+        axis: can be 'xaxis' or 'yaxis'
 
     Returns:
         the modified axis instance

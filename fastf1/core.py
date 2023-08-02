@@ -147,11 +147,13 @@ class Telemetry(pd.DataFrame):
     :class:`pandas.Series`.
 
     Args:
-        *args (any): passed through to `pandas.DataFrame` superclass
-        session (:class:`Session`): Instance of associated session object.
+        *args: passed through to `pandas.DataFrame` superclass
+        session: Instance of associated session object.
             Required for full functionality!
-        driver (str): Driver number as string. Required for full functionality!
-        **kwargs (any): passed through to `pandas.DataFrame` superclass
+        driver: Driver number as string. Required for full functionality!
+        drop_unknown_channels: Remove all unknown data channels (i.e. columns)
+            on initialization.
+        **kwargs: passed through to `pandas.DataFrame` superclass
     """
 
     TELEMETRY_FREQUENCY = 'original'
@@ -185,8 +187,12 @@ class Telemetry(pd.DataFrame):
     _internal_names = pd.DataFrame._internal_names + ['base_class_view']
     _internal_names_set = set(_internal_names)
 
-    def __init__(self, *args, session=None, driver=None,
-                 drop_unknown_channels=False, **kwargs):
+    def __init__(self,
+                 *args,
+                 session: "Session" = None,
+                 driver: str = None,
+                 drop_unknown_channels: bool = False,
+                 **kwargs):
         super().__init__(*args, **kwargs)
         self.session: Optional[Session] = session
         self.driver = driver
@@ -214,9 +220,10 @@ class Telemetry(pd.DataFrame):
         return pd.DataFrame(self)
 
     def join(self, *args, **kwargs):
-        """Wraps :mod:`pandas.DataFrame.join` and adds metadata propagation.
+        """Wraps :meth:`pandas.DataFrame.join` and adds metadata propagation.
 
-        When calling `self.join` metadata will be propagated from self to the joined dataframe.
+        When calling ``self.join`` metadata will be propagated from self to the
+        joined dataframe.
         """
         meta = dict()
         for var in self._metadata:
@@ -227,9 +234,10 @@ class Telemetry(pd.DataFrame):
         return ret
 
     def merge(self, *args, **kwargs):
-        """Wraps :mod:`pandas.DataFrame.merge` and adds metadata propagation.
+        """Wraps :meth:`pandas.DataFrame.merge` and adds metadata propagation.
 
-        When calling `self.merge` metadata will be propagated from self to the merged dataframe.
+        When calling ``self.merge`` metadata will be propagated from self to
+        the merged dataframe.
         """
         meta = dict()
         for var in self._metadata:
@@ -239,13 +247,19 @@ class Telemetry(pd.DataFrame):
             setattr(ret, var, val)
         return ret
 
-    def slice_by_mask(self, mask, pad=0, pad_side='both') -> "Telemetry":
+    def slice_by_mask(
+            self,
+            mask: Union[list, pd.Series, np.ndarray],
+            pad: int = 0,
+            pad_side: str = 'both'
+    ) -> "Telemetry":
         """Slice self using a boolean array as a mask.
 
         Args:
-            mask (array-like): Array of boolean values with the same length as self
-            pad (int): Number of samples used for padding the sliced data
-            pad_side (str): Where to pad the data; possible options: 'both', 'before', 'after'
+            mask: Array of boolean values with the same length as self
+            pad: Number of samples used for padding the sliced data
+            pad_side: Where to pad the data; possible options: 'both',
+            'before', 'after'
         """
         if pad:
             if pad_side in ('both', 'before'):
@@ -269,7 +283,7 @@ class Telemetry(pd.DataFrame):
             pad: int = 0,
             pad_side: str = 'both',
             interpolate_edges: bool = False
-    ):
+    ) -> "Telemetry":
         """Slice self to only include data from the provided lap or laps.
 
         .. note:: Self needs to contain a 'SessionTime' column.
@@ -310,8 +324,8 @@ class Telemetry(pd.DataFrame):
 
     def slice_by_time(
             self,
-            start_time,
-            end_time,
+            start_time: pd.Timedelta,
+            end_time: pd.Timedelta,
             pad: int = 0,
             pad_side: str = 'both',
             interpolate_edges: bool = False
@@ -321,8 +335,8 @@ class Telemetry(pd.DataFrame):
         .. note:: Self needs to contain a 'SessionTime' column. Slicing by time use the 'SessionTime' as its reference.
 
         Args:
-            start_time (Timedelta): Start of the section
-            end_time (Timedelta): End of the section
+            start_time: Start of the section
+            end_time: End of the section
             pad: Number of samples used for padding the sliced data
             pad_side: Where to pad the data; possible options:
                 'both', 'before', 'after
@@ -1444,10 +1458,10 @@ class Session:
             # after comparison
             next_statuses = self.session_status[
                 self.session_status['Time'] > ref_time
-                ]
+            ]
             prev_statuses = self.session_status[
                 self.session_status['Time'] <= ref_time
-                ]
+            ]
 
             if ((not prev_statuses.empty)
                     and (prev_statuses['Status'] == 'Finished').any()):
@@ -2155,14 +2169,14 @@ class Laps(pd.DataFrame):
     """Object for accessing lap (timing) data of multiple laps.
 
     Args:
-        *args (any): passed through to :class:`pandas.DataFrame` super class
-        session (:class:`Session`): instance of session class; required for
+        *args: passed through to :class:`pandas.DataFrame` super class
+        session: instance of session class; required for
           full functionality
-        **kwargs (any): passed through to :class:`pandas.DataFrame`
+        **kwargs: passed through to :class:`pandas.DataFrame`
           super class
 
     This class allows for easily picking specific laps from all laps in a
-    session. It implements some additional functionality on top off the usual
+    session. It implements some additional functionality on top of the usual
     `pandas.DataFrame` functionality. Among others, the laps' associated
     telemetry data can be accessed.
 
@@ -2399,7 +2413,8 @@ class Laps(pd.DataFrame):
         It is recommended to use :meth:`get_car_data` or :meth:`get_pos_data` when possible. This is also faster if
         merging of car and position data is not necessary and if not all computed channels are needed.
 
-        Resampling during merging is done according to the frequency set by :attr:`TELEMETRY_FREQUENCY`.
+        Resampling during merging is done according to the frequency set by
+        :attr:`~Telemetry.TELEMETRY_FREQUENCY`.
 
         .. note:: Telemetry can only be returned if `self` contains laps of one driver only.
 
@@ -2548,10 +2563,14 @@ class Laps(pd.DataFrame):
             return pd.DataFrame(columns=self.session.weather_data.columns)
 
     def pick_lap(self, lap_number: int) -> "Laps":
-        """Return all laps of a specific LapNumber in self based on LapNumber
+        """Return all laps of a specific LapNumber in self based on LapNumber.
 
-            lap_1 = ff1.pick_lap(1)
-            lap_25 = ff1.pick_lap(25)
+        .. deprecated:: 3.1.0
+            pick_lap is deprecated and will be removed in a
+            future release. Use :func:`pick_laps` instead.
+
+            lap_1 = session_laps.pick_lap(1)
+            lap_25 = session_laps.pick_lap(25)
 
         Args:
             lap_number (int): Lap number
@@ -2559,15 +2578,45 @@ class Laps(pd.DataFrame):
         Returns:
             instance of :class:`Laps`
         """
+        warnings.warn(("pick_lap is deprecated and will be removed in a "
+                       "future release. Use pick_laps instead."),
+                      DeprecationWarning)
         return self[self['LapNumber'] == lap_number]
+
+    def pick_laps(self, lap_numbers: Union[int, Iterable[int]]) -> "Laps":
+        """Return all laps of a specific LapNumber or a list of LapNumbers
+        in self. ::
+
+            lap_1 = session_laps.pick_laps(1)
+            lap_10_to_20 = session_laps.pick_lap(range(10, 21))
+
+        Args:
+            lap_numbers: int for matching a single lap,
+                an iterable of ints for matching multiple laps
+
+        Returns:
+            instance of :class:`Laps`
+        """
+        if isinstance(lap_numbers, (int, float)):
+            lap_numbers = [lap_numbers, ]
+
+        for i in lap_numbers:
+            if isinstance(i, float) and not i.is_integer():
+                raise ValueError(f"Invalid value {i} in `lap_numbers`")
+
+        return self[self["LapNumber"].isin(lap_numbers)]
 
     def pick_driver(self, identifier: Union[int, str]) -> "Laps":
         """Return all laps of a specific driver in self based on the driver's
-        three letters identifier or based on the driver number ::
+        three letters identifier or based on the driver number.
 
-            perez_laps = ff1.pick_driver('PER')
-            bottas_laps = ff1.pick_driver(77)
-            kimi_laps = ff1.pick_driver('RAI')
+        .. deprecated:: 3.1.0
+            pick_driver is deprecated and will be removed in a future release.
+            Use :func:`pick_drivers` instead.
+
+            perez_laps = session_laps.pick_driver('PER')
+            bottas_laps = session_laps.pick_driver(77)
+            kimi_laps = session_laps.pick_driver('RAI')
 
         Args:
             identifier (str or int): Driver abbreviation or number
@@ -2575,27 +2624,35 @@ class Laps(pd.DataFrame):
         Returns:
             instance of :class:`Laps`
         """
+        warnings.warn(("pick_driver is deprecated and will be removed"
+                       " in a future release. Use pick_drivers instead."),
+                      DeprecationWarning)
         identifier = str(identifier)
         if identifier.isdigit():
             return self[self['DriverNumber'] == identifier]
         else:
             return self[self['Driver'] == identifier]
 
-    def pick_drivers(self, identifiers: Iterable[Union[int, str]]) -> "Laps":
-        """Return all laps of the specified drivers in self based on the
-        drivers' three letters identifier or based on the driver number. This
-        is the same as :meth:`Laps.pick_driver` but for multiple drivers
-        at once. ::
+    def pick_drivers(self,
+                     identifiers: Union[int, str, Iterable[Union[int, str]]]
+                     ) -> "Laps":
+        """Return all laps of the specified driver or drivers in self based
+        on the drivers' three letters identifier or the driver number. ::
 
-            some_drivers_laps = ff1.pick_drivers([5, 'BOT', 7])
+            ver_laps = session_laps.pick_drivers("VER")
+            some_drivers_laps = session_laps.pick_drivers([5, 'BOT', 7])
 
         Args:
-            identifiers (iterable): Multiple driver abbreviations or driver numbers (can be mixed)
+            identifiers: Multiple driver abbreviations or driver numbers
+                (can be mixed)
 
         Returns:
             instance of :class:`Laps`
         """
-        names = [n for n in identifiers if not str(n).isdigit()]
+        if isinstance(identifiers, (int, str)):
+            identifiers = [identifiers, ]
+
+        names = [n.upper() for n in identifiers if not str(n).isdigit()]
         numbers = [str(n) for n in identifiers if str(n).isdigit()]
         drv, num = self['Driver'], self['DriverNumber']
 
@@ -2603,10 +2660,14 @@ class Laps(pd.DataFrame):
 
     def pick_team(self, name: str) -> "Laps":
         """Return all laps of a specific team in self based on the
-        team's name ::
+        team's name.
 
-            mercedes = ff1.pick_team('Mercedes')
-            alfa_romeo = ff1.pick_team('Alfa Romeo')
+        .. deprecated:: 3.1.0
+            pick_team is deprecated and will be removed in a future release.
+            Use :func:`pick_teams` instead.
+
+            mercedes = session_laps.pick_team('Mercedes')
+            alfa_romeo = session_laps.pick_team('Alfa Romeo')
 
         Have a look to :attr:`fastf1.plotting.TEAM_COLORS` for a quick reference on team names.
 
@@ -2616,21 +2677,27 @@ class Laps(pd.DataFrame):
         Returns:
             instance of :class:`Laps`
         """
+        warnings.warn(("pick_team is deprecated and will be removed"
+                       " in a future release. Use pick_teams instead."),
+                      DeprecationWarning)
         return self[self['Team'] == name]
 
-    def pick_teams(self, names: Iterable[str]) -> "Laps":
-        """Return all laps of the specified teams in self based on the teams'
-        name. This is the same as :meth:`Laps.pick_team` but for multiple
-        teams at once. ::
+    def pick_teams(self, names: Union[str, Iterable[str]]) -> "Laps":
+        """Return all laps of the specified team or teams in self based
+        on the team names. ::
 
-            some_drivers_laps = ff1.pick_teams(['Mercedes', 'Williams'])
+            rbr_laps = session_laps.pick_teams("Red Bull")
+            some_drivers_laps = session_laps.pick_teams(['Haas', 'Alpine'])
 
         Args:
-            names (iterable): Multiple team names
+            names: A single team name or team names
 
         Returns:
             instance of :class:`Laps`
         """
+        if isinstance(names, str):
+            return self[self['Team'] == names]
+
         return self[self['Team'].isin(names)]
 
     def pick_fastest(self, only_by_time: bool = False) -> "Lap":
@@ -2675,11 +2742,11 @@ class Laps(pd.DataFrame):
 
     def pick_quicklaps(self, threshold: Optional[float] = None) -> "Laps":
         """Return all laps with `LapTime` faster than a certain limit. By
-        default the threshold is 107% of the best `LapTime` of all laps
+        default, the threshold is 107% of the best `LapTime` of all laps
         in self.
 
         Args:
-            threshold (optional, float): custom threshold coefficent
+            threshold: custom threshold coefficient
                 (e.g. 1.05 for 105%)
 
         Returns:
@@ -2694,22 +2761,52 @@ class Laps(pd.DataFrame):
     def pick_tyre(self, compound: str) -> "Laps":
         """Return all laps in self which were done on a specific compound.
 
+        .. deprecated:: 3.1.0
+            pick_tyre is deprecated and will be removed in a future release.
+            Use :func:`pick_compounds` instead.
+
         Args:
-            compound (string): may be "SOFT", "MEDIUM", "HARD", "INTERMEDIATE" or "WET"
+            compound: may be "SOFT", "MEDIUM", "HARD",
+                "INTERMEDIATE" or "WET"
 
         Returns:
             instance of :class:`Laps`
         """
-        return self[self['Compound'] == compound]
+        warnings.warn(("pick_tyre is deprecated and will be removed"
+                       " in a future release. Use pick_compound instead."),
+                      DeprecationWarning)
+        return self[self['Compound'] == compound.upper()]
+
+    def pick_compounds(self, compounds: Union[str, Iterable[str]]) -> "Laps":
+        """Return all laps in self which were done on some specific compounds.
+        ::
+
+            soft_laps = session_laps.pick_compounds("SOFT")
+            slick_laps = session_laps.pick_compounds(['SOFT', 'MEDIUM', "HARD])
+
+        Args:
+            compounds: may be "SOFT", "MEDIUM", "HARD", "INTERMEDIATE" or "WET"
+
+        Returns:
+            instance of :class:`Laps`
+        """
+        if isinstance(compounds, str):
+            return self[self['Compound'] == compounds.upper()]
+
+        return self[self['Compound'].isin([i.upper() for i in compounds])]
 
     def pick_track_status(self, status: str, how: str = 'equals') -> "Laps":
         """Return all laps set under a specific track status.
 
         Args:
             status (str): The track status as a string, e.g. '1'
-            how (str): one of 'equals'/'contains'
+            how (str): one of 'equals'/'contains'/'excludes'/'any'/'none'
                 For example, if how='equals', status='2' will only match '2'.
                 If how='contains', status='2' will also match '267' and similar
+                If how='excludes', status='26' will not match '267'
+                but will match '27'
+                If how='any', status='26' will match both '2' and '6'
+                If how='none', status='26' will not match either '12' or '16'
         Returns:
             instance of :class:`Laps`
         """
@@ -2717,6 +2814,14 @@ class Laps(pd.DataFrame):
             return self[self['TrackStatus'] == status]
         elif how == 'contains':
             return self[self['TrackStatus'].str.contains(status, regex=False)]
+        elif how == 'excludes':
+            return self[~self['TrackStatus'].str.contains(status, regex=False)]
+        elif how == 'any':
+            return self[self['TrackStatus'].str.contains('|'.join(status),
+                                                         regex=True)]
+        elif how == 'none':
+            return self[~self['TrackStatus'].str.contains('|'.join(status),
+                                                          regex=True)]
         else:
             raise ValueError(f"Invalid value '{how}' for kwarg 'how'")
 
@@ -2727,6 +2832,19 @@ class Laps(pd.DataFrame):
             instance of :class:`Laps`
         """
         return self[pd.isnull(self['PitInTime']) & pd.isnull(self['PitOutTime'])]
+
+    def pick_not_deleted(self) -> "Laps":
+        """Return all laps whose lap times are NOT deleted.
+
+        Returns:
+            instance of :class:`Laps`
+        """
+        if 'Deleted' in self.columns:
+            return self[~self['Deleted']]
+        else:
+            raise DataNotLoadedError("The Deleted column is only available "
+                                     "when race control messages are loaded. "
+                                     "See `Session.load`")
 
     def pick_accurate(self) -> "Laps":
         """Return all laps which pass the accuracy validation check
@@ -2793,12 +2911,13 @@ class Laps(pd.DataFrame):
         It additionally provides the `require` keyword argument.
 
         Args:
-             require (optional, iterable): Require is a list of column/telemetry channel names. All names listed in
-               `require` must exist in the data and have a non-null value (tested with :func:`pandas.is_null`). The
-               iterator only yields laps for which this is true. If require is left empty, the iterator will yield
-               all laps.
+            require: Require is a list of column/telemetry channel names. All
+                names listed in `require` must exist in the data and have a
+                non-null value (tested with :func:`pandas.is_null`). The
+                iterator only yields laps for which this is true. If require is
+                left empty, the iterator will yield all laps.
         Yields:
-            (index, instance of :class:`Lap`)
+            (index, lap): label and an instance of :class:`Lap`
         """
         for index, lap in self.iterrows():
             if require:
@@ -2858,7 +2977,8 @@ class Lap(pd.Series):
         It is recommended to use :meth:`get_car_data` or :meth:`get_pos_data` when possible. This is also faster if
         merging of car and position data is not necessary and if not all computed channels are needed.
 
-        Resampling during merging is done according to the frequency set by :attr:`TELEMETRY_FREQUENCY`.
+        Resampling during merging is done according to the frequency set by
+        :attr:`~Telemetry.TELEMETRY_FREQUENCY`.
 
         Returns:
             instance of :class:`Telemetry`
@@ -3160,7 +3280,7 @@ class DriverResult(pd.Series):
     This class subclasses a :class:`pandas.Series` and the usual methods
     provided by pandas can be used to work with the data.
 
-    For information on which data is available, see :class:`SessionResult`.
+    For information on which data is available, see :class:`SessionResults`.
 
     .. note:: This class is usually not instantiated directly. You should
         create a session and access the driver result through
